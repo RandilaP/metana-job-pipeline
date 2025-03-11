@@ -1,128 +1,146 @@
-import { NextResponse } from 'next/server';
-import { uploadToS3, getTextFromDocument } from '../../../lib/aws';
-import { appendToSheet } from '../../../lib/google-sheets';
-import { structureCV } from '../../../lib/gemini';
-import { calculateNextDayTimezone } from '../../../lib/time-utils';
+import { NextResponse, NextRequest } from 'next/server';
+import {
+  S3Client,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getTextExtractor } from 'office-text-extractor'
+import {v4 as uuidv4} from 'uuid';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-interface FormData {
-    get(name: string): File | string | null;
+const path = require("path");
+const sgMail = require('@sendgrid/mail')
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+
+const extractor = getTextExtractor();
+
+const Bucket = process.env.S3_BUCKET_NAME;
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
+  },
+});
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
+
+async function sendCVDataToGoogleSheets(cvData: any) {
+  const response = await fetch(process.env.GOOGLE_SHEET_SCRIPT_LINK as string, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(cvData),
+  });
+
+  const result = await response.json();
+  console.log(result);
 }
 
-interface S3UploadResult {
-    publicUrl: string;
-    fileKey: string;
+async function sendWebhook(cvData: any, metadata: any) {
+  const payload = {
+    cv_data: cvData,
+    metadata: metadata,
+  };
+
+  const response = await fetch('https://rnd-assignment.automations-3d6.workers.dev/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Candidate-Email': process.env.EMAIL as string,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const result = await response;
+  console.log(result);
 }
 
-interface StructuredCV {
-    education: any;
-    qualifications: any;
-    projects: any;
-    personal_info: any;
-}
+export async function POST(request: NextRequest) {
+  const formData = await request.formData();
+  const files = formData.getAll("file") as File[];
+  const fileExtention = path.extname(files[0].name);
+  const fileName = `${uuidv4()}${fileExtention}`;
 
-interface WebhookPayload {
-    cv_data: {
-        personal_info: any;
-        education: any;
-        qualifications: any;
-        projects: any;
-        cv_public_link: string;
-    };
-    metadata: {
-        applicant_name: string;
-        email: string;
-        status: string;
-        cv_processed: boolean;
-        processed_timestamp: string;
-    };
-}
+  
+  const response = await Promise.all(
+    files.map(async (file) => {
+      const Body = Buffer.from(await file.arrayBuffer());
+      s3.send(new PutObjectCommand({ Bucket, Key: fileName, Body }));
+    })
+  );
 
-interface ScheduleEmailPayload {
-    email: string;
-    name: string;
-    scheduledTime: string;
-}
+  const fileBuffer = Buffer.from(await files[0].arrayBuffer());
+  const text = await extractor.extractText({input: fileBuffer, type: 'file'});
 
-export async function POST(request: Request): Promise<NextResponse> {
-    try {
-        const formData: FormData = await request.formData();
-        
-        const name: string | null = formData.get('name') as string | null;
-        const email: string | null = formData.get('email') as string | null;
-        const phone: string | null = formData.get('phone') as string | null;
-        const cvFile: File | null = formData.get('cv') as File | null;
-        
-        // 1. Upload to S3
-        const { publicUrl, fileKey }: S3UploadResult = await uploadToS3(cvFile);
-        
-        // 2. Extract text using Textract
-        const rawText: string = await getTextFromDocument(fileKey);
-        
-        // 3. Structure the data using Gemini
-        const structuredData: StructuredCV = await structureCV(rawText);
-        
-        // 4. Add data to Google Sheet
-        await appendToSheet({
-            name,
-            email,
-            phone,
-            cvUrl: publicUrl,
-            education: JSON.stringify(structuredData.education),
-            qualifications: JSON.stringify(structuredData.qualifications),
-            projects: JSON.stringify(structuredData.projects),
-            personalInfo: JSON.stringify(structuredData.personal_info)
-        });
-        
-        // 5. Send webhook notification
-        const webhookPayload: WebhookPayload = {
-            cv_data: {
-                personal_info: structuredData.personal_info,
-                education: structuredData.education,
-                qualifications: structuredData.qualifications,
-                projects: structuredData.projects,
-                cv_public_link: publicUrl
-            },
-            metadata: {
-                applicant_name: name!,
-                email: email!,
-                status: "testing", // Change to "testing" during development
-                cv_processed: true,
-                processed_timestamp: new Date().toISOString()
-            }
-        };
-        
-        // await fetch('https://rnd-assignment.automations-3d6.workers.dev/', {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //         'X-Candidate-Email': 'randilamenukapremarathne@gmail.com' // Replace with the email you used to apply
-        //     },
-        //     body: JSON.stringify(webhookPayload)
-        // });
-        
-        // 6. Schedule follow-up email for next day
-        const nextDayTime: string = calculateNextDayTimezone(email!);
-        
-        const scheduleEmailPayload: ScheduleEmailPayload = {
-            email: email!,
-            name: name!,
-            scheduledTime: nextDayTime
-        };
-        
-        await fetch('/api/schedule-email', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(scheduleEmailPayload)
-        });
-        
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        console.error('Submission error:', error);
-        return NextResponse.json(
-            { error: 'Failed to process application' },
-            { status: 500 }
-        );
+
+  const model = genAI.getGenerativeModel({model: "gemini-1.5-flash" });
+  
+  const prompt = `
+    Extract the following information from this CV text and structure it into JSON format:
+    
+    1. Personal Information (name, contact details)
+    2. Education (institution names, degrees, years)
+    3. Qualifications (skills, certifications, etc.)
+    4. Projects (titles, descriptions, technology used)
+    
+    CV Text:
+    ${text}
+    
+    Response format should be valid JSON with the following structure:
+    {
+      "personal_info": {
+        "name": "",
+        "email": "",
+        "phone": "",
+        "address": "",
+        "linkedin": ""},
+      "education": [...],
+      "qualifications": [...],
+      "projects": [...]
     }
+  `;
+  
+  const result = await model.generateContent(prompt);
+  const responseText = result.response.text();
+
+  const jsonMatch = responseText.match(/{[\s\S]*}/);
+  const json = JSON.parse(jsonMatch![0]);
+  json.cv_public_link = `https://${Bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+  console.log(json);
+
+  await sendCVDataToGoogleSheets(json);
+
+  const metadata = {
+    applicant_name: formData.get("name"),
+    email: formData.get("email"),
+    status: "testing", 
+    cv_processed: true,
+    processed_timestamp: new Date().toISOString(),
+  };
+
+  await sendWebhook(json, metadata);
+
+  const msg = {
+    to: formData.get("email"),
+    from: process.env.EMAIL as string,
+    subject: 'Your CV is Under Review',
+    text: `Dear ${formData.get("name")},\n\nYour CV is currently under review. We will get back to you soon.\n\nBest regards,\nMetana Team`,
+    html: `<p>Dear ${formData.get("name")},</p><p>Your CV is currently under review. We will get back to you soon.</p><p>Best regards,<br>Metana Team</p>`,
+    send_at: Math.floor(Date.now() / 1000) + 24 * 60 * 60,
+  }
+  
+  sgMail
+    .send(msg)
+    .then((response: any) => {
+      console.log(response[0].statusCode)
+      console.log(response[0].headers)
+    })
+    .catch((error: any) => {
+      console.error(error)
+    })
+
+  return NextResponse.json(response);
+
 }

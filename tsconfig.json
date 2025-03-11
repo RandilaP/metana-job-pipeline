@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/components/ApplicationForm.tsx", "src/app/page.tsx", "src/lib/aws.js", "src/lib/gemini.js", "src/lib/google-sheets.js", "src/lib/time-utils.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/components/ApplicationForm.jsx", "src/app/page.tsx", "src/lib/aws.js", "src/lib/gemini.js", "src/lib/google-sheets.js", "src/lib/time-utils.js", "src/app/components/FormField.jsx", "src/app/components/UploadField.jsx", "src/app/api/submit/route.ts"],
   "exclude": ["node_modules"]
 }
