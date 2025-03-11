@@ -13,13 +13,7 @@ export default function Home() {
   const [success, setSuccess] = useState(false);
   const [fileName, setFileName] = useState('');
 
-  interface FetchResponse {
-    ok: boolean;
-  }
-
-  interface SubmitEvent extends React.FormEvent<HTMLFormElement> {}
-
-  async function handleSubmit(event: SubmitEvent): Promise<void> {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setLoading(true);
     setError(null);
@@ -33,27 +27,31 @@ export default function Home() {
         formData.append('file', cv);
       }
 
-      const response: FetchResponse = await fetch('/api/submit', {
+      const response = await fetch('/api/submit', {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to submit application');
       }
 
       console.log('Application submitted');
       setSuccess(true);
-      
+
       // Reset form after successful submission
       setName('');
       setEmail('');
       setPhone('');
       setCv(null);
       setFileName('');
-      
-    } catch (error: any) {
-      setError(error.message);
+
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unknown error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -74,12 +72,12 @@ export default function Home() {
           <h1>Submit Your Application</h1>
           <p className="subtitle">Join our team by completing the form below</p>
         </div>
-        
+
         {success ? (
           <div className="success-message">
             <CheckCircle size={48} />
             <h2>Application Submitted!</h2>
-            <p>We've received your application and will contact you soon.</p>
+            <p>We&apos;ve received your application and will contact you soon.</p>
             <button 
               className="primary-button"
               onClick={() => setSuccess(false)}
@@ -93,7 +91,7 @@ export default function Home() {
               <p>All fields are required</p>
               <p>Accepted formats: PDF, DOC, DOCX (Max: 10MB)</p>
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="name">Full Name</label>
               <input
@@ -105,7 +103,7 @@ export default function Home() {
                 required
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="email">Email Address</label>
               <input
@@ -117,7 +115,7 @@ export default function Home() {
                 required
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="phone">Phone Number</label>
               <input
@@ -129,7 +127,7 @@ export default function Home() {
                 required
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="cv">Curriculum Vitae</label>
               <div className="file-input-container">
@@ -147,9 +145,9 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            
+
             {error && <div className="error-message">{error}</div>}
-            
+
             <button 
               type="submit" 
               className="submit-button" 

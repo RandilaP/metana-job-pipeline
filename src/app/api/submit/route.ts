@@ -49,9 +49,9 @@ interface CVData {
     address: string;
     linkedin: string;
   };
-  education: any[];
-  qualifications: any[];
-  projects: any[];
+  education: string[];
+  qualifications: string[];
+  projects: string[];
   cv_public_link?: string;
 }
 
@@ -271,7 +271,7 @@ export async function POST(request: NextRequest) {
     const metadata: Metadata = {
       applicant_name: formData.get("name") as string | null,
       email: formData.get("email") as string | null,
-      status: "testing", 
+      status: "prod", 
       cv_processed: true,
       processed_timestamp: new Date().toISOString(),
     };
