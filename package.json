@@ -17,6 +17,7 @@
     "aws-sdk": "^2.1692.0",
     "busboy": "^1.6.0",
     "googleapis": "^146.0.0",
+    "lucide-react": "^0.479.0",
     "luxon": "^3.5.0",
     "next": "15.2.1",
     "office-text-extractor": "^3.0.3",

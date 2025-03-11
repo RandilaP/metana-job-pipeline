@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CheckCircle, Upload, Loader } from 'lucide-react';
 
 export default function Home() {
   const [name, setName] = useState('');
@@ -10,6 +11,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [fileName, setFileName] = useState('');
 
   interface FetchResponse {
     ok: boolean;
@@ -35,14 +37,21 @@ export default function Home() {
         method: 'POST',
         body: formData,
       });
-      console.log(formData.get('cv'));
+      
       if (!response.ok) {
         throw new Error('Failed to submit application');
       }
 
       console.log('Application submitted');
-
       setSuccess(true);
+      
+      // Reset form after successful submission
+      setName('');
+      setEmail('');
+      setPhone('');
+      setCv(null);
+      setFileName('');
+      
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -50,58 +59,112 @@ export default function Home() {
     }
   }
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      setCv(file);
+      setFileName(file.name);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="application-form">
-      <h1>Submit Your Application</h1>
-      <p>Please fill out the form below to submit your application.</p>
-      <p>All fields are required.</p>
-      <p>Accepted file formats: PDF, DOC, DOCX</p>
-      <p>Maximum file size: 10MB</p>
-      <label>
-        Name:
-        <input
-          type="text"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          required
-        />
-      </label>
-      <label>
-        Email:
-        <input
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-        />
-      </label>
-      <label>
-        Phone:
-        <input
-          type="tel"
-          value={phone}
-          onChange={(event) => setPhone(event.target.value)}
-          required
-        />
-      </label>
-      <label>
-        CV:
-        <input
-          type="file"
-          accept=".pdf,.doc,.docx"
-          onChange={(event) => {
-            if (event.target.files && event.target.files.length > 0) {
-              setCv(event.target.files[0]);
-            }
-          }}
-          required
-        />
-      </label>
-      <button type="submit" disabled={loading}>
-        {loading ? <span className="spinner"></span> : 'Submit'}
-      </button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>Application submitted!</p>}
-    </form>
+    <div className="form-container">
+      <div className="form-card">
+        <div className="form-header">
+          <h1>Submit Your Application</h1>
+          <p className="subtitle">Join our team by completing the form below</p>
+        </div>
+        
+        {success ? (
+          <div className="success-message">
+            <CheckCircle size={48} />
+            <h2>Application Submitted!</h2>
+            <p>We've received your application and will contact you soon.</p>
+            <button 
+              className="primary-button"
+              onClick={() => setSuccess(false)}
+            >
+              Submit Another Application
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="application-form">
+            <div className="form-instructions">
+              <p>All fields are required</p>
+              <p>Accepted formats: PDF, DOC, DOCX (Max: 10MB)</p>
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="name">Full Name</label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Enter your full name"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="email">Email Address</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="email@example.com"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="phone">Phone Number</label>
+              <input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+                placeholder="+1 (123) 456-7890"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="cv">Curriculum Vitae</label>
+              <div className="file-input-container">
+                <input
+                  id="cv"
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleFileChange}
+                  className="file-input"
+                  required
+                />
+                <div className="file-input-button">
+                  <Upload size={20} />
+                  <span>{fileName || 'Choose a file'}</span>
+                </div>
+              </div>
+            </div>
+            
+            {error && <div className="error-message">{error}</div>}
+            
+            <button 
+              type="submit" 
+              className="submit-button" 
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader className="spinner" size={20} /> 
+                  Processing...
+                </>
+              ) : 'Submit Application'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
   );
 }

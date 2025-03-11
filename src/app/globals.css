@@ -1,113 +1,257 @@
-/* Global styles */
+/* Modern Application Form Styles */
+:root {
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --text-color: #1f2937;
+  --text-light: #6b7280;
+  --error-color: #ef4444;
+  --success-color: #10b981;
+  --border-color: #e5e7eb;
+  --border-focus: #a5b4fc;
+  --bg-light: #f9fafb;
+  --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --transition: all 0.3s ease;
+  --input-radius: 0.5rem;
+}
+
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: #f9fafb;
-  color: #333;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.5;
+  color: var(--text-color);
+  background-color: #f3f4f6;
+  background-image: 
+    radial-gradient(circle at 100% 100%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+  background-size: cover;
+  background-attachment: fixed;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+}
+
+.form-container {
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-}
-
-/* Form container */
-.application-form {
-  max-width: 600px;
-  margin: 2rem auto;
   padding: 2rem;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Form title */
-.application-form h1 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  color: #1d4ed8;
+.form-card {
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: var(--card-shadow);
+  width: 100%;
+  max-width: 550px;
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.form-header {
+  background-color: var(--primary-color);
+  padding: 2rem;
+  color: white;
   text-align: center;
 }
 
-/* Form description */
-.application-form p {
-  margin-bottom: 1rem;
-  color: #6b7280;
-  text-align: center;
+.form-header h1 {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.875rem;
 }
 
-/* Form labels */
-.application-form label {
+.subtitle {
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+  opacity: 0.9;
+  font-size: 1rem;
+}
+
+.application-form {
+  padding: 2rem;
+}
+
+.form-instructions {
+  background-color: var(--bg-light);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-instructions p {
+  margin: 0.25rem 0;
+  color: var(--text-light);
+  font-size: 0.875rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+label {
   display: block;
   margin-bottom: 0.5rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
 }
 
-/* Form inputs */
-.application-form input[type="text"],
-.application-form input[type="email"],
-.application-form input[type="tel"],
-.application-form input[type="file"] {
+input[type="text"],
+input[type="email"],
+input[type="tel"] {
   width: 100%;
-  padding: 0.5rem;
-  margin-bottom: 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
+  padding: 0.75rem 1rem;
   font-size: 1rem;
-  color: #374151;
+  border: 1px solid var(--border-color);
+  border-radius: var(--input-radius);
+  transition: var(--transition);
+  box-sizing: border-box;
 }
 
-/* Submit button */
-.application-form button[type="submit"] {
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.5);
+}
+
+.file-input-container {
+  position: relative;
+}
+
+.file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
   width: 100%;
-  padding: 0.75rem;
-  background-color: #1d4ed8;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 600;
+  height: 100%;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  z-index: 2;
 }
 
-.application-form button[type="submit"]:hover {
-  background-color: #2563eb;
+.file-input-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--input-radius);
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-light);
+  transition: var(--transition);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.application-form button[type="submit"]:disabled {
-  background-color: #9ca3af;
+.file-input-button:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(79, 70, 229, 0.05);
+}
+
+.submit-button {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--input-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.submit-button:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+}
+
+.submit-button:disabled {
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
-/* Error and success messages */
-.application-form p[style*="color: red"] {
-  color: #dc2626;
-  font-size: 0.875rem;
-  margin-top: 1rem;
-}
-
-.application-form p[style*="color: green"] {
-  color: #16a34a;
-  font-size: 0.875rem;
-  margin-top: 1rem;
-}
-
-/* Loading spinner */
-.application-form .spinner {
-  display: inline-block;
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  border-top-color: #fff;
+.spinner {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
   to {
     transform: rotate(360deg);
+  }
+}
+
+.error-message {
+  color: var(--error-color);
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.success-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.success-message svg {
+  color: var(--success-color);
+  margin-bottom: 1rem;
+}
+
+.success-message h2 {
+  margin: 0.5rem 0;
+  color: var(--success-color);
+}
+
+.success-message p {
+  margin-bottom: 2rem;
+  color: var(--text-light);
+}
+
+.primary-button {
+  padding: 0.75rem 1.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--input-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.primary-button:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .form-container {
+    padding: 1rem;
+  }
+  
+  .form-header {
+    padding: 1.5rem;
+  }
+  
+  .form-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .application-form {
+    padding: 1.5rem;
   }
 }
